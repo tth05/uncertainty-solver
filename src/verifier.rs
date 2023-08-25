@@ -5,7 +5,16 @@ pub fn get_balance_checks(mode: usize) -> Vec<Vec<(usize, usize)>> {
 
     match mode {
         //Case 1
-        1 => vec![vec![(0, 15), (1, 14), (2, 13), (3, 12), (4, 11), (5, 10), (6, 9), (7, 8)]],
+        1 => vec![vec![
+            (0, 15),
+            (1, 14),
+            (2, 13),
+            (3, 12),
+            (4, 11),
+            (5, 10),
+            (6, 9),
+            (7, 8),
+        ]],
         // Case 2
         2 => vec![
             vec![(0, 7), (4, 3), (1, 6), (5, 2)],
@@ -29,21 +38,36 @@ pub fn get_balance_checks(mode: usize) -> Vec<Vec<(usize, usize)>> {
         5 => vec![
             vec![(0, 5), (4, 1)],
             vec![(8, 13), (12, 9)],
-            vec![(0, 15), (1, 14), (2, 13), (3, 12), (4, 11), (5, 10), (6, 9), (7, 8)],
+            vec![
+                (0, 15),
+                (1, 14),
+                (2, 13),
+                (3, 12),
+                (4, 11),
+                (5, 10),
+                (6, 9),
+                (7, 8),
+            ],
             vec![(2, 7), (6, 3)],
             vec![(10, 15), (14, 11)],
         ],
-        _ => unreachable!()
+        _ => unreachable!(),
     }
 }
 
-pub fn check_if_valid(state: &[usize; 16], checks: &[Vec<(usize, usize)>]) -> bool {
-    checks.iter().all(|check| {
-        let mut inequality = 0.0;
-        for (first, last) in check.iter().cloned() {
-            inequality += (state[first] as f32 - state[last] as f32).abs();
-        }
+pub fn check_if_solved(state: &[usize; 16], checks: &[Vec<(usize, usize)>]) -> bool {
+    checks.iter().all(|check| check_inequality(state, check))
+}
 
-        inequality < (check.len() << 7) as f32
-    })
+pub fn check_if_unsolved(state: &[usize; 16], checks: &[Vec<(usize, usize)>]) -> bool {
+    !checks.iter().any(|check| check_inequality(state, check))
+}
+
+fn check_inequality(state: &[usize; 16], check: &[(usize, usize)]) -> bool {
+    let mut inequality = 0.0;
+    for (first, last) in check.iter().cloned() {
+        inequality += (state[first] as f32 - state[last] as f32).abs();
+    }
+
+    inequality < (check.len() << 8) as f32
 }

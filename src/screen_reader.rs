@@ -1,7 +1,7 @@
 use screenshots::Screen;
 use speedy::{Readable, Writable};
 
-const SAMPLE_COUNT: usize = 200;
+const SAMPLE_COUNT: usize = 100;
 
 #[derive(Writable, Readable, Clone, Copy)]
 pub struct GridData {
@@ -28,8 +28,8 @@ pub fn read_values_from_screen(screen: &Screen, grid_data: GridData) -> [usize; 
         for y in 0..4 {
             let pixel_offset = (y * grid_offset * image_size + x * grid_offset) * 4;
             let [_, g, b, _] = image.rgba()[pixel_offset..pixel_offset + 4] else { unreachable!() };
-            let gray = g as usize + b as usize;
-            arr[i] = ((gray as f64 / (115f64 + 255f64)) * 1000f64) as usize;
+            // let gray = g as usize + b as usize;
+            arr[i] = ((b as f64 * 999f64) / 255f64) as usize;
             i += 1;
         }
     }
