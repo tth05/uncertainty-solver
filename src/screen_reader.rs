@@ -27,7 +27,7 @@ pub fn read_values_from_screen(screen: &Screen, grid_data: GridData) -> [usize; 
     for x in 0..4 {
         for y in 0..4 {
             let pixel_offset = (y * grid_offset * image_size + x * grid_offset) * 4;
-            let [_, g, b, _] = image.rgba()[pixel_offset..pixel_offset + 4] else { unreachable!() };
+            let [_, _, b, _] = image.rgba()[pixel_offset..pixel_offset + 4] else { unreachable!() };
             // let gray = g as usize + b as usize;
             arr[i] = ((b as f64 * 999f64) / 255f64) as usize;
             i += 1;

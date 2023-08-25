@@ -2,7 +2,7 @@ use crate::actor::MouseGridData;
 use crate::screen_reader::GridData;
 use dialoguer::console::Term;
 use dialoguer::theme::ColorfulTheme;
-use dialoguer::Input;
+use dialoguer::{Confirm, Input, Select};
 use screenshots::Screen;
 use speedy::{Readable, Writable};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -18,7 +18,7 @@ fn main() {
     let input_state = read_input_state();
     let theme = ColorfulTheme::default();
 
-    let use_resolver_x = Input::<bool>::with_theme(&theme)
+    let use_resolver_x = Confirm::with_theme(&theme)
         .with_prompt("Use Resolver X")
         .show_default(input_state.is_some())
         .default(
@@ -27,36 +27,49 @@ fn main() {
                 .map(|s| s.0.use_resolver_x)
                 .unwrap_or(false),
         )
-        .interact_text_on(&Term::stdout())
+        .interact()
         .unwrap();
 
-    let mode = Input::<usize>::with_theme(&theme)
+    let mode = Select::with_theme(&theme)
         .with_prompt("Mode")
-        .validate_with(|val: &usize| {
-            if (1..=5).contains(val) {
-                Ok(())
-            } else {
-                Err("Invalid mode")
-            }
-        })
-        .show_default(input_state.is_some())
-        .default(input_state.as_ref().map(|s| s.0.mode).unwrap_or(0))
-        .interact_text()
-        .unwrap();
+        .items(&[
+            "1: One lamp",
+            "2: Two lamps",
+            "3: Four lamps in centers",
+            "4: Four lamps in corners",
+            "5: Five lamps",
+        ])
+        .default(input_state.as_ref().map(|s| s.0.mode - 1).unwrap_or(0))
+        .interact()
+        .unwrap()
+        + 1;
 
     let (screen_id, screen) = {
         let screens = Screen::all().unwrap();
-        let screen_id = Input::<usize>::with_theme(&theme)
-            .with_prompt("Screen ID")
-            .validate_with(|val: &usize| {
-                if (0..screens.len()).contains(val) {
-                    Ok(())
-                } else {
-                    Err("Invalid screen ID")
-                }
-            })
+        let screen_id = Select::with_theme(&theme)
+            .with_prompt("Screen")
+            .items(
+                &screens
+                    .iter()
+                    .enumerate()
+                    .map(|(i, screen)| {
+                        format!(
+                            "{}: {}x{} ({}x scale){}",
+                            i,
+                            screen.display_info.width,
+                            screen.display_info.height,
+                            screen.display_info.scale_factor,
+                            if screen.display_info.is_primary {
+                                " (primary)"
+                            } else {
+                                ""
+                            }
+                        )
+                    })
+                    .collect::<Vec<_>>(),
+            )
             .default(input_state.as_ref().map(|s| s.0.screen_id).unwrap_or(0))
-            .interact_text()
+            .interact()
             .unwrap();
 
         (screen_id, screens[screen_id])
@@ -137,7 +150,7 @@ fn main() {
 
     println!("Use Ctrl+H to start solver");
     inputbot::KeybdKey::HKey.bind({
-        let is_running = Arc::new(AtomicBool::new(false));
+        let is_running = AtomicBool::new(false);
 
         move || {
             let shift = inputbot::KeybdKey::LShiftKey.is_pressed();

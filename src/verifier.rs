@@ -55,31 +55,41 @@ pub fn get_balance_checks(mode: usize) -> Vec<Vec<(usize, usize)>> {
     }
 }
 
-pub fn check_if_solved(state: &[usize; 16], checks: &[Vec<(usize, usize)>]) -> bool {
+pub fn check_if_solved(state: &[usize; 16], checks: &[Vec<(usize, usize)>]) -> (bool, usize) {
     checks
         .iter()
-        .all(|check| check_inequality(state, check, false))
+        .map(|check| check_inequality(state, check, false))
+        .fold((true, 0), |(a_solved, a_ineq), (b_solved, b_ineq)| {
+            (a_solved && b_solved, a_ineq + b_ineq)
+        })
 }
 
-pub fn check_if_unsolved(state: &[usize; 16], checks: &[Vec<(usize, usize)>]) -> bool {
-    !checks
+pub fn check_if_unsolved(state: &[usize; 16], checks: &[Vec<(usize, usize)>]) -> (bool, usize) {
+    checks
         .iter()
-        .any(|check| check_inequality(state, check, true))
+        .map(|check| check_inequality(state, check, true))
+        .fold((false, 0), |(a_solved, a_ineq), (b_solved, b_ineq)| {
+            (!a_solved && !b_solved, a_ineq + b_ineq)
+        })
 }
 
-fn check_inequality(state: &[usize; 16], check: &[(usize, usize)], threshold_dir: bool) -> bool {
-    let mut inequality = 0.0;
+fn check_inequality(
+    state: &[usize; 16],
+    check: &[(usize, usize)],
+    threshold_dir: bool,
+) -> (bool, usize) {
+    let mut inequality = 0;
     for (first, last) in check.iter().cloned() {
-        inequality += (state[first] as f32 - state[last] as f32).abs();
+        inequality += (state[first] as i64 - state[last] as i64).abs();
     }
 
     // NOTE: We shift by 7 (original code), then shift by 1 because the `check` slice contains
     // pairs and not single values. Then some smaller factor is subtracted to account for the
     // inaccuracy of the screen reader (Tighter threshold prevents finding solutions which are too
     // close to an unsolved state)
-    let threshold = (check.len() << 8) as f32
-        + (check.len() << 4) as f32 * (if threshold_dir { 1f32 } else { -1f32 });
-    inequality < threshold
+    let threshold = (check.len() << 8) as i64
+        + (check.len() << 4) as i64 * (if threshold_dir { 1 } else { -1 });
+    (inequality < threshold, inequality as usize)
 }
 
 #[cfg(test)]
@@ -93,18 +103,18 @@ mod tests {
             66, 946, 646, 126, 146, 753, 760, 506, 793, 80, 706, 600, 400, 893, 393, 813,
         ];
         let checks = get_balance_checks(3);
-        assert!(!check_if_solved(&state, &checks));
+        assert!(!check_if_solved(&state, &checks).0);
 
         let state = [
             910, 860, 100, 740, 780, 90, 400, 250, 830, 760, 890, 130, 620, 870, 990, 530,
         ];
         let checks = get_balance_checks(3);
-        assert!(!check_if_solved(&state, &checks));
+        assert!(!check_if_solved(&state, &checks).0);
 
         let state = [
             571, 460, 821, 570, 200, 590, 251, 250, 820, 10, 610, 280, 880, 730, 300, 320,
         ];
         let checks = get_balance_checks(3);
-        assert!(!check_if_unsolved(&state, &checks));
+        assert!(!check_if_unsolved(&state, &checks).0);
     }
 }

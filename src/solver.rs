@@ -12,6 +12,7 @@ pub fn solve(
 ) -> Result<Vec<IndexPermutation>, String> {
     let mut permutations = Vec::with_capacity(15);
     let mut best_permutations = vec![(0, 0); 16];
+    let mut best_inequality = usize::MAX * usize::from(!unsolve);
 
     let mut total_iterations = 0;
     for _ in 0..5000 {
@@ -20,8 +21,7 @@ pub fn solve(
 
         let checks = verifier::get_balance_checks(mode);
         let mut solved_state = screen_state;
-
-        let mut found = false;
+        let mut solve_result = (false, 0);
         for _ in 0..ITERATIONS {
             total_iterations += 1;
 
@@ -38,13 +38,13 @@ pub fn solve(
                 verifier::check_if_unsolved(&solved_state, &checks)
             };
 
-            if done {
-                found = true;
+            if done.0 {
+                solve_result = done;
                 break;
             }
         }
 
-        if !found {
+        if !solve_result.0 {
             return Err(format!(
                 "Failed to find a valid state after {:?} iterations",
                 ITERATIONS
@@ -69,8 +69,9 @@ pub fn solve(
             }
         }
 
-        if permutations.len() < best_permutations.len() {
+        if (!unsolve && solve_result.1 < best_inequality) || (unsolve && solve_result.1 > best_inequality)/*permutations.len() < best_permutations.len()*/ {
             std::mem::swap(&mut permutations, &mut best_permutations);
+            best_inequality = solve_result.1;
         }
 
         // Good enough, although 1 is the minimum
