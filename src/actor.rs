@@ -1,27 +1,20 @@
 use std::time::Duration;
 use enigo::MouseControllable;
-use screenshots::Screen;
-use speedy::{Writable, Readable};
-use crate::screen_reader::screen_scaled;
+use crate::InputData;
+use crate::screen_reader::{ingame_scaled, screen_scaled};
 use crate::solver::IndexPermutation;
 
 const DELAY: Duration = Duration::from_millis(100);
 
-#[derive(Writable, Readable, Clone, Copy)]
-pub struct MouseGridData {
-    pub x_base: i32,
-    pub y_base: i32,
-    pub grid_offset: i32,
-    pub grid_center_width: i32,
-}
+const MOUSE_GRID_CENTER_WIDTH_BASE_SCALE: i32 = 650;
 
-pub fn perform_permutations(screen: &Screen, grid_data: MouseGridData, permutations: Vec<IndexPermutation>) {
+pub fn perform_permutations(input_data: &InputData, permutations: Vec<IndexPermutation>) {
     let mut enigo = enigo::Enigo::new();
     let mut move_and_click = |x: i32, y: i32| {
-        let additional_offset = screen_scaled(screen, if x > 1 { grid_data.grid_center_width - grid_data.grid_offset } else { 0 });
+        let additional_offset = if x > 1 { ingame_scaled(input_data, MOUSE_GRID_CENTER_WIDTH_BASE_SCALE) - input_data.mouse_grid_offset } else { 0 };
         enigo.mouse_move_to(
-            screen_scaled(screen, grid_data.x_base) + screen_scaled(screen, x * grid_data.grid_offset) + additional_offset,
-            screen_scaled(screen, grid_data.y_base) + screen_scaled(screen, y * grid_data.grid_offset),
+            screen_scaled(input_data, input_data.mouse_grid_x_base + x * input_data.mouse_grid_offset + additional_offset),
+            screen_scaled(input_data, input_data.mouse_grid_y_base + y * input_data.mouse_grid_offset),
         );
         std::thread::sleep(Duration::from_millis(80));
         enigo.mouse_click(enigo::MouseButton::Left);

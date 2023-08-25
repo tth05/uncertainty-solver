@@ -1,26 +1,17 @@
-use screenshots::Screen;
-use speedy::{Readable, Writable};
+use crate::InputData;
+use screenshots::{Image, Screen};
 
 const SAMPLE_COUNT: usize = 150;
 
-#[derive(Writable, Readable, Clone, Copy)]
-pub struct GridData {
-    pub x_base: i32,
-    pub y_base: i32,
-    pub grid_offset: i32,
-}
+const GRID_X_OFFSET_BASE_SCALE: i32 = 210;
+const GRID_Y_OFFSET_BASE_SCALE: i32 = 115;
+const GRID_OFFSET_BASE_SCALE: i32 = 75;
 
-pub fn read_values_from_screen(screen: &Screen, grid_data: GridData) -> [usize; 16] {
+pub fn read_values_from_screen(screen: &Screen, input_data: &InputData) -> [usize; 16] {
     let mut arr = [0usize; 16];
 
     let mut i = 0;
-    // NOTE: The returned image is scaled by the scale factor
-    let image = screen.capture_area(
-        screen_scaled(screen, grid_data.x_base),
-        screen_scaled(screen, grid_data.y_base),
-        screen_scaled(screen, 3 * grid_data.grid_offset) as u32,
-        screen_scaled(screen, 3 * grid_data.grid_offset) as u32,
-    ).unwrap();
+    let image = capture_grid_image(screen, input_data);
 
     let image_size = image.width() as usize;
     let grid_offset = image_size / 3 - 1;
@@ -37,18 +28,12 @@ pub fn read_values_from_screen(screen: &Screen, grid_data: GridData) -> [usize; 
     arr
 }
 
-pub fn read_values_sampled_from_screen(screen: &Screen, grid_data: GridData) -> [usize; 16] {
+pub fn read_values_sampled_from_screen(screen: &Screen, input_data: &InputData) -> [usize; 16] {
     let mut arr = [0usize; 16];
 
     for _ in 0..SAMPLE_COUNT {
         let mut i = 0;
-        // NOTE: The returned image is scaled by the scale factor
-        let image = screen.capture_area(
-            screen_scaled(screen, grid_data.x_base),
-            screen_scaled(screen, grid_data.y_base),
-            screen_scaled(screen, 3 * grid_data.grid_offset) as u32,
-            screen_scaled(screen, 3 * grid_data.grid_offset) as u32,
-        ).unwrap();
+        let image = capture_grid_image(screen, input_data);
 
         let image_size = image.width() as usize;
         let grid_offset = image_size / 3 - 1;
@@ -70,6 +55,32 @@ pub fn read_values_sampled_from_screen(screen: &Screen, grid_data: GridData) -> 
     arr
 }
 
-pub fn screen_scaled(screen: &Screen, val: i32) -> i32 {
-    (val as f32 * 1f32 / screen.display_info.scale_factor) as i32
+/// NOTE: The returned image is scaled by the scale factor
+fn capture_grid_image(screen: &Screen, input_data: &InputData) -> Image {
+    screen
+        .capture_area(
+            screen_scaled(
+                input_data,
+                input_data.mouse_grid_x_base + ingame_scaled(input_data, GRID_X_OFFSET_BASE_SCALE),
+            ),
+            screen_scaled(
+                input_data,
+                input_data.mouse_grid_y_base + ingame_scaled(input_data, GRID_Y_OFFSET_BASE_SCALE),
+            ),
+            screen_ingame_scaled(input_data, 3 * GRID_OFFSET_BASE_SCALE) as u32,
+            screen_ingame_scaled(input_data, 3 * GRID_OFFSET_BASE_SCALE) as u32,
+        )
+        .unwrap()
+}
+
+pub fn screen_scaled(input_data: &InputData, val: i32) -> i32 {
+    (val as f64 * input_data.screen_scale) as i32
+}
+
+pub fn ingame_scaled(input_data: &InputData, val: i32) -> i32 {
+    (val as f64 * input_data.ingame_scale) as i32
+}
+
+pub fn screen_ingame_scaled(input_data: &InputData, val: i32) -> i32 {
+    screen_scaled(input_data, ingame_scaled(input_data, val))
 }

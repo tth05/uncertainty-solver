@@ -1,12 +1,10 @@
-use crate::actor::MouseGridData;
-use crate::screen_reader::GridData;
-use dialoguer::console::Term;
+#![feature(let_chains)]
+
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::{Confirm, Input, Select};
 use screenshots::Screen;
 use speedy::{Readable, Writable};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
 use std::time::Instant;
 
 mod actor;
@@ -14,7 +12,13 @@ mod screen_reader;
 mod solver;
 mod verifier;
 
+const MOUSE_GRID_OFFSET_BASE_SCALE: i32 = 110;
+
 fn main() {
+    if let Some(arg) = std::env::args().nth(1) && arg == "-r" {
+        std::fs::remove_file(".uncertainty-solver-input").unwrap_or(());
+    }
+
     let input_state = read_input_state();
     let theme = ColorfulTheme::default();
 
@@ -24,7 +28,7 @@ fn main() {
         .default(
             input_state
                 .as_ref()
-                .map(|s| s.0.use_resolver_x)
+                .map(|s| s.use_resolver_x)
                 .unwrap_or(false),
         )
         .interact()
@@ -39,7 +43,7 @@ fn main() {
             "4: Four lamps in corners",
             "5: Five lamps",
         ])
-        .default(input_state.as_ref().map(|s| s.0.mode - 1).unwrap_or(0))
+        .default(input_state.as_ref().map(|s| s.mode - 1).unwrap_or(0))
         .interact()
         .unwrap()
         + 1;
@@ -68,7 +72,7 @@ fn main() {
                     })
                     .collect::<Vec<_>>(),
             )
-            .default(input_state.as_ref().map(|s| s.0.screen_id).unwrap_or(0))
+            .default(input_state.as_ref().map(|s| s.screen_id).unwrap_or(0))
             .interact()
             .unwrap();
 
@@ -103,50 +107,36 @@ fn main() {
                 .unwrap() as i32
         };
 
-    let (basic_data, screen_grid_data, mouse_grid_data) = input_state
+    let input_data = input_state
         // Always use new input state for these values
         .map(|state| {
-            (
-                BasicData {
+                InputData {
                     use_resolver_x,
                     mode,
                     screen_id,
-                },
-                state.1,
-                state.2,
-            )
+                    ..state
+                }
         })
         .or_else(|| {
-            let screen_grid_data = {
-                GridData {
-                    x_base: number_input("Value Grid X Base", &verify_width),
-                    y_base: number_input("Value Grid Y Base", &verify_height),
-                    grid_offset: number_input("Value Grid Offset", &verify_width),
-                }
-            };
-
-            let mouse_grid_data = {
-                MouseGridData {
-                    x_base: number_input("Mouse Grid X Base", &verify_width),
-                    y_base: number_input("Mouse Grid Y Base", &verify_height),
-                    grid_offset: number_input("Mouse Grid Offset", &verify_width),
-                    grid_center_width: number_input("Mouse Grid Center Width", &verify_width),
-                }
-            };
-
-            Some((
-                BasicData {
+            let mouse_grid_x_base = number_input("Mouse Grid X Base", &verify_width);
+            let mouse_grid_y_base = number_input("Mouse Grid Y Base", &verify_height);
+            let mouse_grid_offset = number_input("Mouse Grid Offset", &verify_width);
+            Some(
+                InputData {
                     use_resolver_x,
                     mode,
                     screen_id,
+                    mouse_grid_x_base,
+                    mouse_grid_y_base,
+                    mouse_grid_offset,
+                    screen_scale: 1f64 / screen.display_info.scale_factor as f64,
+                    ingame_scale: mouse_grid_offset as f64 / MOUSE_GRID_OFFSET_BASE_SCALE as f64
                 },
-                screen_grid_data,
-                mouse_grid_data,
-            ))
+            )
         })
         .unwrap();
 
-    write_input_state(&basic_data, &screen_grid_data, &mouse_grid_data);
+    write_input_state(&input_data);
 
     println!("Use Ctrl+H to start solver");
     inputbot::KeybdKey::HKey.bind({
@@ -162,9 +152,9 @@ fn main() {
 
             let t = Instant::now();
             let mut arr = if use_resolver_x {
-                screen_reader::read_values_from_screen(&screen, screen_grid_data)
+                screen_reader::read_values_from_screen(&screen, &input_data)
             } else {
-                screen_reader::read_values_sampled_from_screen(&screen, screen_grid_data)
+                screen_reader::read_values_sampled_from_screen(&screen, &input_data)
             };
 
             ensure_no_duplicates(&mut arr);
@@ -175,7 +165,7 @@ fn main() {
             println!("Solver took {:?}", t.elapsed());
             match result {
                 Ok(permutations) => {
-                    actor::perform_permutations(&screen, mouse_grid_data, permutations)
+                    actor::perform_permutations(&input_data, permutations)
                 }
                 Err(e) => println!("{}", e),
             };
@@ -187,37 +177,34 @@ fn main() {
     inputbot::handle_input_events();
 }
 
-#[derive(Writable, Readable)]
-struct BasicData {
+#[derive(Writable, Readable, Default)]
+pub struct InputData {
     use_resolver_x: bool,
     mode: usize,
     screen_id: usize,
+    mouse_grid_x_base: i32,
+    mouse_grid_y_base: i32,
+    mouse_grid_offset: i32,
+    screen_scale: f64,
+    ingame_scale: f64
 }
 
 fn write_input_state(
-    basic_data: &BasicData,
-    screen_grid_data: &GridData,
-    mouse_grid_data: &MouseGridData,
+    input_data: &InputData,
 ) {
     let mut buf = Vec::new();
-    buf.extend(basic_data.write_to_vec().unwrap());
-    buf.extend(screen_grid_data.write_to_vec().unwrap());
-    buf.extend(mouse_grid_data.write_to_vec().unwrap());
+    buf.extend(input_data.write_to_vec().unwrap());
     std::fs::write(".uncertainty-solver-input", buf)
         .expect("Failed to write input state to .uncertainty-solver-input");
 }
 
-fn read_input_state() -> Option<(BasicData, GridData, MouseGridData)> {
+fn read_input_state() -> Option<InputData> {
     let buf = match std::fs::read(".uncertainty-solver-input") {
         Ok(buf) => buf,
         Err(_) => return None,
     };
 
-    let (basic_data, screen_grid_data, mouse_grid_data) = match Readable::read_from_buffer(&buf) {
-        Ok(b) => b,
-        Err(_) => return None,
-    };
-    Some((basic_data, screen_grid_data, mouse_grid_data))
+    Readable::read_from_buffer(&buf).ok()
 }
 
 fn ensure_no_duplicates(arr: &mut [usize; 16]) {
