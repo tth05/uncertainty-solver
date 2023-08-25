@@ -10,16 +10,16 @@ pub fn solve(
     mode: usize,
     unsolve: bool,
 ) -> Result<Vec<IndexPermutation>, String> {
+    let checks = verifier::get_balance_checks(mode);
+    let uniform_range = Uniform::from(0usize..16);
+    let mut rand = rand::thread_rng();
+
     let mut permutations = Vec::with_capacity(15);
     let mut best_permutations = vec![(0, 0); 16];
     let mut best_inequality = usize::MAX * usize::from(!unsolve);
 
     let mut total_iterations = 0;
     for _ in 0..5000 {
-        let uniform_range = Uniform::from(0usize..16);
-        let mut rand = rand::thread_rng();
-
-        let checks = verifier::get_balance_checks(mode);
         let mut solved_state = screen_state;
         let mut solve_result = (false, 0);
         for _ in 0..ITERATIONS {
