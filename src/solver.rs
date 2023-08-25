@@ -10,7 +10,6 @@ pub fn solve(
     mode: usize,
     unsolve: bool,
 ) -> Result<Vec<IndexPermutation>, String> {
-    println!("Solving for mode {}", unsolve);
     let mut permutations = Vec::with_capacity(15);
     let mut best_permutations = vec![(0, 0); 16];
 

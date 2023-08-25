@@ -1,7 +1,7 @@
 use screenshots::Screen;
 use speedy::{Readable, Writable};
 
-const SAMPLE_COUNT: usize = 100;
+const SAMPLE_COUNT: usize = 150;
 
 #[derive(Writable, Readable, Clone, Copy)]
 pub struct GridData {
