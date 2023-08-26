@@ -17,7 +17,7 @@ _(Example values for a 4k monitor with GUI scale "auto": x=1340, y=510, offset=1
 While in-game, use the displayed keybinding to start the solver. Holding shift will turn all lamps red (unsolve).
 
 ### Example Usage
-![](media/solver_usage.mp4)
+https://github.com/tth05/uncertainty-solver/assets/36999320/fe919fe7-4c33-4152-a76d-af56417a75a4
 
 ## How the Uncertainty Resolver works
 For each mode there are predefined groups of squares. The goal is to minimize the color difference for all squares in
