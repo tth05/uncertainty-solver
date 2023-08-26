@@ -10,7 +10,8 @@ Download the program from the [releases](https://github.com/tth05/uncertainty-so
 will reset the saved values.
 
 Some parameters require screen coordinates. You can use something like ShareX or a similar program to get these values.
-Where you should get these values from is shown in the image below.
+Where you should get these values from is shown in the image below. **Keep in mind that if you move your game window or
+change your gui scale you will need new values.**
 ![](media/screen_values.png)
 _(Example values for a 4k monitor with GUI scale "auto": x=1340, y=510, offset=145)_
 
