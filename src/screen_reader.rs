@@ -1,5 +1,6 @@
+use image::RgbaImage;
 use crate::InputData;
-use screenshots::{Image, Screen};
+use screenshots::{Screen};
 
 const SAMPLE_COUNT: usize = 150;
 
@@ -13,12 +14,11 @@ pub fn read_values_from_screen(screen: &Screen, input_data: &InputData) -> [usiz
     let mut i = 0;
     let image = capture_grid_image(screen, input_data);
 
-    let image_size = image.width() as usize;
+    let image_size = image.width();
     let grid_offset = image_size / 3 - 1;
     for x in 0..4 {
         for y in 0..4 {
-            let pixel_offset = (y * grid_offset * image_size + x * grid_offset) * 4;
-            let [_, _, b, _] = image.rgba()[pixel_offset..pixel_offset + 4] else { unreachable!() };
+            let b = image.get_pixel(x * grid_offset, y * grid_offset).0[2];
             // let gray = g as usize + b as usize;
             arr[i] = ((b as f64 * 999f64) / 255f64) as usize;
             i += 1;
@@ -35,12 +35,11 @@ pub fn read_values_sampled_from_screen(screen: &Screen, input_data: &InputData) 
         let mut i = 0;
         let image = capture_grid_image(screen, input_data);
 
-        let image_size = image.width() as usize;
+        let image_size = image.width();
         let grid_offset = image_size / 3 - 1;
         for x in 0..4 {
             for y in 0..4 {
-                let pixel_offset = (y * grid_offset * image_size + x * grid_offset) * 4;
-                let [_, g, b, _] = image.rgba()[pixel_offset..pixel_offset + 4] else { unreachable!() };
+                let [_, g, b, _] = image.get_pixel(x * grid_offset, y * grid_offset).0;
                 let gray = (0.4 * g as f32 + 0.6 * b as f32) as u8;
                 arr[i] += usize::from(gray >= 10);
                 i += 1;
@@ -56,7 +55,7 @@ pub fn read_values_sampled_from_screen(screen: &Screen, input_data: &InputData) 
 }
 
 /// NOTE: The returned image is scaled by the scale factor
-fn capture_grid_image(screen: &Screen, input_data: &InputData) -> Image {
+fn capture_grid_image(screen: &Screen, input_data: &InputData) -> RgbaImage {
     screen
         .capture_area(
             screen_scaled(

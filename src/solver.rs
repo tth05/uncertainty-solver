@@ -28,7 +28,6 @@ pub fn solve(
             let index1 = uniform_range.sample(&mut rand);
             let index2 = uniform_range.sample(&mut rand);
 
-            // Swap the value at the index with the random value
             solved_state.swap(index1, index2);
 
             // Check if the state is valid

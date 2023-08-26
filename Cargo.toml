@@ -7,8 +7,9 @@ edition = "2021"
 
 [dependencies]
 rand = "0.8.5"
-screenshots = "0.6.0"
+screenshots = "0.8.2"
+image = "0.24.7"
 enigo = "0.1.2"
 dialoguer = { version = "0.10.4", default-features = false, features = ["history"] }
 speedy = "0.8.6"
-inputbot = "0.5.1"
+inputbot = "0.6.0"
