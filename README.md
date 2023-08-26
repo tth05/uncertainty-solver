@@ -16,6 +16,9 @@ _(Example values for a 4k monitor with GUI scale "auto": x=1340, y=510, offset=1
 
 While in-game, use the displayed keybinding to start the solver. Holding shift will turn all lamps red (unsolve).
 
+### Example Usage
+![](media/solver_usage.mp4)
+
 ## How the Uncertainty Resolver works
 For each mode there are predefined groups of squares. The goal is to minimize the color difference for all squares in
 a group. Note that the normal resolver uses blinking speed instead of a color to display the value of a cell.

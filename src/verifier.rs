@@ -68,8 +68,8 @@ pub fn check_if_unsolved(state: &[usize; 16], checks: &[Vec<(usize, usize)>]) ->
     checks
         .iter()
         .map(|check| check_inequality(state, check, true))
-        .fold((false, 0), |(a_solved, a_ineq), (b_solved, b_ineq)| {
-            (!a_solved && !b_solved, a_ineq + b_ineq)
+        .fold((true, 0), |(a_solved, a_ineq), (b_solved, b_ineq)| {
+            (a_solved && !b_solved, a_ineq + b_ineq)
         })
 }
 
@@ -115,6 +115,10 @@ mod tests {
             571, 460, 821, 570, 200, 590, 251, 250, 820, 10, 610, 280, 880, 730, 300, 320,
         ];
         let checks = get_balance_checks(3);
+        assert!(!check_if_unsolved(&state, &checks).0);
+
+        let state = [352, 885, 689, 148, 760, 336, 180, 618, 579, 129, 0, 677, 164, 446, 940, 411];
+        let checks = get_balance_checks(5);
         assert!(!check_if_unsolved(&state, &checks).0);
     }
 }
