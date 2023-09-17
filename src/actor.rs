@@ -8,13 +8,13 @@ const DELAY: Duration = Duration::from_millis(100);
 
 const MOUSE_GRID_CENTER_WIDTH_BASE_SCALE: i32 = 650;
 
-pub fn perform_permutations(input_data: &InputData, permutations: Vec<IndexPermutation>) {
+pub fn perform_permutations(screen: &Screen, input_data: &InputData, permutations: Vec<IndexPermutation>) {
     let mut enigo = enigo::Enigo::new();
     let mut move_and_click = |x: i32, y: i32| {
         let additional_offset = if x > 1 { ingame_scaled(input_data, MOUSE_GRID_CENTER_WIDTH_BASE_SCALE) - input_data.mouse_grid_offset } else { 0 };
         enigo.mouse_move_to(
-            screen_scaled(input_data, input_data.mouse_grid_x_base + x * input_data.mouse_grid_offset + additional_offset),
-            screen_scaled(input_data, input_data.mouse_grid_y_base + y * input_data.mouse_grid_offset),
+            screen.display_info.x + screen_scaled(input_data, input_data.mouse_grid_x_base + x * input_data.mouse_grid_offset + additional_offset),
+            screen.display_info.y + screen_scaled(input_data, input_data.mouse_grid_y_base + y * input_data.mouse_grid_offset),
         );
         std::thread::sleep(Duration::from_millis(80));
         enigo.mouse_click(enigo::MouseButton::Left);

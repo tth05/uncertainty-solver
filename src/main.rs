@@ -165,7 +165,8 @@ fn main() {
             println!("Solver took {:?}", t.elapsed());
             match result {
                 Ok(permutations) => {
-                    actor::perform_permutations(&input_data, permutations)
+                    println!("Found a solution with {} permutations", permutations.len());
+                        actor::perform_permutations(&screen, &input_data, permutations);
                 }
                 Err(e) => println!("{}", e),
             };
