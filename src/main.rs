@@ -8,6 +8,7 @@ use speedy::{Readable, Writable};
 use std::ops::Add;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
+use enigo::MouseControllable;
 
 mod actor;
 mod screen_reader;
@@ -81,6 +82,29 @@ fn main() {
         (screen_id, screens[screen_id])
     };
 
+    let click_automatically = Confirm::with_theme(&theme)
+        .with_prompt("Click automatically")
+        .show_default(input_state.is_some())
+        .default(
+            input_state
+                .as_ref()
+                .map(|s| s.click_automatically)
+                .unwrap_or(true),
+        )
+        .interact()
+        .unwrap();
+
+    let click_delay = if !click_automatically {
+        // No need to ask the user in this case
+        input_state.as_ref().map(|s| s.click_delay).unwrap_or(100)
+    } else {
+        Input::<u64>::with_theme(&theme)
+            .with_prompt("Click delay (ms)")
+            .default(input_state.as_ref().map(|s| s.click_delay).unwrap_or(100))
+            .interact()
+            .unwrap()
+    };
+
     let verify_width = |val: &u32| {
         if (0..(screen.display_info.width as f32 * screen.display_info.scale_factor) as u32)
             .contains(val)
@@ -111,30 +135,30 @@ fn main() {
 
     let input_data = input_state
         // Always use new input state for these values
-        .map(|state| {
-                InputData {
-                    use_resolver_x,
-                    mode,
-                    screen_id,
-                    ..state
-                }
+        .map(|state| InputData {
+            use_resolver_x,
+            mode,
+            screen_id,
+            click_automatically,
+            click_delay,
+            ..state
         })
         .or_else(|| {
             let mouse_grid_x_base = number_input("Mouse Grid X Base", &verify_width);
             let mouse_grid_y_base = number_input("Mouse Grid Y Base", &verify_height);
             let mouse_grid_offset = number_input("Mouse Grid Offset", &verify_width);
-            Some(
-                InputData {
-                    use_resolver_x,
-                    mode,
-                    screen_id,
-                    mouse_grid_x_base,
-                    mouse_grid_y_base,
-                    mouse_grid_offset,
-                    screen_scale: 1f64 / screen.display_info.scale_factor as f64,
-                    ingame_scale: mouse_grid_offset as f64 / MOUSE_GRID_OFFSET_BASE_SCALE as f64
-                },
-            )
+            Some(InputData {
+                use_resolver_x,
+                mode,
+                screen_id,
+                click_automatically,
+                click_delay,
+                mouse_grid_x_base,
+                mouse_grid_y_base,
+                mouse_grid_offset,
+                screen_scale: 1f64 / screen.display_info.scale_factor as f64,
+                ingame_scale: mouse_grid_offset as f64 / MOUSE_GRID_OFFSET_BASE_SCALE as f64,
+            })
         })
         .unwrap();
 
@@ -170,7 +194,9 @@ fn main() {
                     println!("Found a solution with {} permutations", permutations.len());
                     pretty_print_permutations(&permutations, 6);
 
+                    if input_data.click_automatically {
                         actor::perform_permutations(&screen, &input_data, permutations);
+                    }
                 }
                 Err(e) => println!("{}", e),
             };
@@ -224,16 +250,16 @@ pub struct InputData {
     use_resolver_x: bool,
     mode: usize,
     screen_id: usize,
+    click_automatically: bool,
+    click_delay: u64,
     mouse_grid_x_base: i32,
     mouse_grid_y_base: i32,
     mouse_grid_offset: i32,
     screen_scale: f64,
-    ingame_scale: f64
+    ingame_scale: f64,
 }
 
-fn write_input_state(
-    input_data: &InputData,
-) {
+fn write_input_state(input_data: &InputData) {
     let mut buf = Vec::new();
     buf.extend(input_data.write_to_vec().unwrap());
     std::fs::write(".uncertainty-solver-input", buf)

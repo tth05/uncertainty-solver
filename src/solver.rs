@@ -83,11 +83,6 @@ pub fn solve(
         "Found a close and valid state after {} iterations",
         total_iterations
     );
-    println!(
-        "Requires {} permutations: {:?}",
-        best_permutations.len(),
-        best_permutations
-    );
 
     Ok(best_permutations)
 }
