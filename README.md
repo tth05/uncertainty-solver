@@ -11,8 +11,9 @@ Download the program from the [releases](https://github.com/tth05/uncertainty-so
 `.\uncertainty-solver.exe [-r]`. The input values will be remembered if you run the program again. The optional `-r` 
 will reset the saved values.
 
-
 ### Input values
+These values can be ignored if "click automatically" is not used. See [disabling auto clicking](#disabling-auto-clicking)
+
 Some parameters require screen coordinates. You can use something like ShareX or a similar program to get these values.
 Where you should get these values from is shown in the image below. **Keep in mind that if you move your game window or
 change your gui scale you will need new values.**
