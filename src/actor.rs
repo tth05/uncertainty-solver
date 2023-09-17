@@ -18,7 +18,9 @@ pub fn perform_permutations(screen: &Screen, input_data: &InputData, permutation
             screen.display_info.y + screen_scaled(input_data, input_data.mouse_grid_y_base + y * input_data.mouse_grid_offset),
         );
         std::thread::sleep(delay);
-        enigo.mouse_click(enigo::MouseButton::Left);
+        enigo.mouse_down(enigo::MouseButton::Left);
+        std::thread::sleep(Duration::from_millis(10));
+        enigo.mouse_up(enigo::MouseButton::Left);
     };
 
     for (a, b) in permutations {
