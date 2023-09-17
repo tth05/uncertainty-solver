@@ -1,9 +1,11 @@
 #![feature(let_chains)]
 
+use crate::actor::convert_index_to_coords;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::{Confirm, Input, Select};
 use screenshots::Screen;
 use speedy::{Readable, Writable};
+use std::ops::Add;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
 
@@ -166,6 +168,8 @@ fn main() {
             match result {
                 Ok(permutations) => {
                     println!("Found a solution with {} permutations", permutations.len());
+                    pretty_print_permutations(&permutations, 6);
+
                         actor::perform_permutations(&screen, &input_data, permutations);
                 }
                 Err(e) => println!("{}", e),
@@ -176,6 +180,43 @@ fn main() {
     });
 
     inputbot::handle_input_events();
+}
+
+fn pretty_print_permutations(permutations: &[solver::IndexPermutation], grids_per_line: usize) {
+    let mut lines = vec![String::new(); 4];
+    permutations
+        .chunks(grids_per_line)
+        .enumerate()
+        .for_each(|(chunk_index, chunk)| {
+            for (index, perm) in chunk.iter().enumerate() {
+                let (x1, y1) = convert_index_to_coords(perm.0);
+                let (x2, y2) = convert_index_to_coords(perm.1);
+
+                for y in 0..4 {
+                    for x in 0..4 {
+                        lines[y as usize].push(if x == x1 && y == y1 {
+                            'A'
+                        } else if x == x2 && y == y2 {
+                            'B'
+                        } else {
+                            '~'
+                        })
+                    }
+
+                    let print_arrow = y == 1
+                        && (index != chunk.len() - 1
+                            || chunk_index != ((permutations.len() - 1) / grids_per_line));
+                    lines[y as usize].push_str(if print_arrow { " \u{2192} " } else { "   " });
+                }
+            }
+
+            lines.iter_mut().for_each(|line| {
+                println!("{}", line);
+                line.clear();
+            });
+
+            println!();
+        })
 }
 
 #[derive(Writable, Readable, Default)]

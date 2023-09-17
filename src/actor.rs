@@ -31,6 +31,6 @@ pub fn perform_permutations(screen: &Screen, input_data: &InputData, permutation
     }
 }
 
-fn convert_index_to_coords(index: usize) -> (i32, i32) {
+pub fn convert_index_to_coords(index: usize) -> (i32, i32) {
     ((index / 4) as i32, (index % 4) as i32)
 }
